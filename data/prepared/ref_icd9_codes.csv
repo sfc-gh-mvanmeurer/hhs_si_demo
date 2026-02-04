@@ -1,0 +1,21 @@
+ICD9_CODE,DESCRIPTION,CODE_TYPE
+4019,Unspecified essential hypertension,DIAGNOSIS
+25000,Diabetes mellitus without complication,DIAGNOSIS
+4280,"Congestive heart failure, unspecified",DIAGNOSIS
+42731,Atrial fibrillation,DIAGNOSIS
+2724,Other and unspecified hyperlipidemia,DIAGNOSIS
+7802,Syncope and collapse,DIAGNOSIS
+486,"Pneumonia, organism unspecified",DIAGNOSIS
+5849,"Acute kidney failure, unspecified",DIAGNOSIS
+78650,"Chest pain, unspecified",DIAGNOSIS
+5990,"Urinary tract infection, site not specified",DIAGNOSIS
+496,"Chronic airway obstruction, not elsewhere classified",DIAGNOSIS
+311,"Depressive disorder, not elsewhere classified",DIAGNOSIS
+7245,"Backache, unspecified",DIAGNOSIS
+71590,"Osteoarthrosis, unspecified",DIAGNOSIS
+7140,Rheumatoid arthritis,DIAGNOSIS
+43411,Cerebral embolism with cerebral infarction,DIAGNOSIS
+41401,Coronary atherosclerosis of native coronary artery,DIAGNOSIS
+5853,"Chronic kidney disease, Stage III",DIAGNOSIS
+2768,Hypopotassemia,DIAGNOSIS
+2720,Pure hypercholesterolemia,DIAGNOSIS

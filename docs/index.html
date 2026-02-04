@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HHS Fraud Investigation Demo | Snowflake Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0F172A;
+            --secondary: #1E293B;
+            --accent: #3B82F6;
+            --accent-light: #60A5FA;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --success: #10B981;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: #334155;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --gradient-start: #1E3A8A;
+            --gradient-end: #7C3AED;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Header */
+        header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--accent-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text) 0%, var(--accent-light) 50%, var(--text) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Section Styles */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-light);
+            margin-bottom: 0.75rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Pipeline Section */
+        .pipeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-top: 3rem;
+            position: relative;
+        }
+
+        .pipeline::before {
+            content: '';
+            position: absolute;
+            top: 50px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--gradient-end));
+            z-index: 0;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pipeline-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--secondary);
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .pipeline-step:hover .pipeline-icon {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .pipeline-step h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .pipeline-step p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Components Grid */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .component-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .component-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent);
+        }
+
+        .component-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(124, 58, 237, 0.2));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .component-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .component-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .component-tag {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            background: rgba(59, 130, 246, 0.15);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-light);
+        }
+
+        /* Semantic Model Section */
+        .semantic-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .semantic-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .semantic-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent-light);
+        }
+
+        .semantic-list {
+            list-style: none;
+        }
+
+        .semantic-list li {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .semantic-list li:last-child {
+            border-bottom: none;
+        }
+
+        .semantic-highlight {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(124, 58, 237, 0.1));
+            border: 1px solid var(--accent);
+            grid-column: span 4;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+
+        .semantic-highlight-icon {
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .semantic-highlight h4 {
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .semantic-highlight p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Demo Section */
+        .demo-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            overflow: hidden;
+            margin-top: 3rem;
+        }
+
+        .demo-header {
+            background: var(--secondary);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .demo-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .demo-dot.red { background: #EF4444; }
+        .demo-dot.yellow { background: #F59E0B; }
+        .demo-dot.green { background: #10B981; }
+
+        .demo-title {
+            margin-left: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .demo-content {
+            padding: 2rem;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.25rem;
+        }
+
+        .chat-avatar.user {
+            background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        }
+
+        .chat-avatar.bot {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .chat-bubble {
+            background: var(--secondary);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            max-width: 80%;
+        }
+
+        .chat-bubble.user {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(124, 58, 237, 0.2));
+            border: 1px solid var(--accent);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .results-table th {
+            text-align: left;
+            padding: 0.75rem;
+            background: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            font-weight: 600;
+        }
+
+        .results-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .risk-badge.critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #F87171;
+        }
+
+        .risk-badge.high {
+            background: rgba(245, 158, 11, 0.2);
+            color: #FBBF24;
+        }
+
+        .risk-badge.medium {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60A5FA;
+        }
+
+        .sample-questions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .sample-question {
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sample-question:hover {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .sample-question span {
+            font-size: 1.25rem;
+        }
+
+        /* Comparison Section */
+        .comparison-hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .accuracy-comparison {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3rem;
+            margin: 2rem 0;
+        }
+
+        .accuracy-item {
+            text-align: center;
+        }
+
+        .accuracy-value {
+            font-size: 4rem;
+            font-weight: 800;
+        }
+
+        .accuracy-value.snowflake {
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .accuracy-value.competitor {
+            color: var(--text-muted);
+        }
+
+        .accuracy-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .vs-badge {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .advantages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .advantage-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .advantage-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .advantage-card ul {
+            list-style: none;
+        }
+
+        .advantage-card li {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .advantage-card li::before {
+            content: '✓';
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .advantage-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba(16, 185, 129, 0.15);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--success);
+            margin-top: 0.5rem;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            padding: 1rem;
+            text-align: left;
+            background: var(--secondary);
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .check {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .cross {
+            color: var(--danger);
+        }
+
+        .partial {
+            color: var(--warning);
+        }
+
+        /* Limitations Section */
+        .limitations-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .limitation-card {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .limitation-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            color: #F87171;
+            margin-bottom: 0.75rem;
+        }
+
+        .limitation-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .limitation-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba(239, 68, 68, 0.15);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: #F87171;
+            margin-top: 0.5rem;
+        }
+
+        /* POC Box */
+        .poc-box {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(124, 58, 237, 0.1));
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 3rem 0;
+        }
+
+        .poc-box h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .poc-box p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .poc-stats {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .poc-stat {
+            text-align: center;
+        }
+
+        .poc-stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .poc-stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-light);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .semantic-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .semantic-highlight {
+                grid-column: span 2;
+            }
+
+            .advantages-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .limitations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .pipeline::before {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .semantic-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .semantic-highlight {
+                grid-column: span 1;
+                flex-direction: column;
+            }
+
+            .sample-questions {
+                grid-template-columns: 1fr;
+            }
+
+            .accuracy-comparison {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .poc-stats {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="grid-overlay"></div>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🛡️</div>
+            <span>HHS Fraud Investigation</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#architecture">Architecture</a>
+            <a href="#components">Components</a>
+            <a href="#semantic">Semantic Layer</a>
+            <a href="#demo">Demo</a>
+            <a href="#comparison">Comparison</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="badge">
+            <span>🤖</span>
+            Snowflake Intelligence Demo
+        </div>
+        <h1>AI-Powered Medicare & Medicaid Fraud Investigation</h1>
+        <p>Transform fraud investigation workflows with natural language queries, intelligent case triage, and AI-assisted review—powered by Cortex Analyst, Cortex Search, and Snowflake Intelligence.</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Semantic Views</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2</div>
+                <div class="stat-label">Search Services</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">∞</div>
+                <div class="stat-label">Questions Supported</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">&lt;3s</div>
+                <div class="stat-label">Response Time</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture">
+        <div class="section-header">
+            <div class="section-badge">Architecture</div>
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">From ML-flagged claims to actionable investigation insights, powered by semantic understanding and intelligent tool selection.</p>
+        </div>
+
+        <div class="pipeline">
+            <div class="pipeline-step">
+                <div class="pipeline-icon">🚨</div>
+                <h4>ML Fraud Flags</h4>
+                <p>Claims flagged by detection model with risk scores</p>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-icon">💬</div>
+                <h4>Investigator Query</h4>
+                <p>Natural language question from fraud analyst</p>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-icon">🧠</div>
+                <h4>Agent Router</h4>
+                <p>Selects optimal tools: Analyst, Search, or both</p>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-icon">🔮</div>
+                <h4>Semantic Layer</h4>
+                <p>Maps intent to fraud case definitions</p>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-icon">📊</div>
+                <h4>Investigation Insight</h4>
+                <p>Answer with case IDs and dollar amounts</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Components Section -->
+    <section id="components">
+        <div class="section-header">
+            <div class="section-badge">Components</div>
+            <h2 class="section-title">Intelligence Stack</h2>
+            <p class="section-subtitle">Three integrated components working together to accelerate fraud investigations with AI-powered insights.</p>
+        </div>
+
+        <div class="components-grid">
+            <div class="component-card">
+                <div class="component-icon">📐</div>
+                <h3>Semantic Views</h3>
+                <p>Declarative definitions that teach AI about fraud investigation data: risk tiers, claim patterns, beneficiary profiles, and provider risk scores. The AI understands "high-risk cases" means RISK_TIER IN ('CRITICAL', 'HIGH').</p>
+                <div class="component-tag">CREATE SEMANTIC VIEW</div>
+            </div>
+            <div class="component-card">
+                <div class="component-icon">🔍</div>
+                <h3>Cortex Search</h3>
+                <p>Hybrid search combining keyword matching and vector embeddings. Search through investigation case notes, fraud pattern knowledge base, and historical findings with natural language.</p>
+                <div class="component-tag">Cortex Search Service</div>
+            </div>
+            <div class="component-card">
+                <div class="component-icon">🤖</div>
+                <h3>Cortex Analyst</h3>
+                <p>Text-to-SQL engine that generates optimized queries from investigator questions. Uses semantic model for accurate column mapping, provider joins, and claim aggregations.</p>
+                <div class="component-tag">Text-to-SQL</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Semantic Layer Section -->
+    <section id="semantic">
+        <div class="section-header">
+            <div class="section-badge">Semantic Layer</div>
+            <h2 class="section-title">Fraud Investigation Definitions</h2>
+            <p class="section-subtitle">The semantic layer bridges technical CMS data schemas and fraud investigation vocabulary, enabling AI to understand your domain.</p>
+        </div>
+
+        <div class="semantic-grid">
+            <div class="semantic-card">
+                <h4>📊 Dimensions</h4>
+                <ul class="semantic-list">
+                    <li>claim_id, flag_id</li>
+                    <li>beneficiary_id, provider_id</li>
+                    <li>fraud_pattern_type</li>
+                    <li>risk_tier (CRITICAL/HIGH/MEDIUM/LOW)</li>
+                    <li>review_status</li>
+                    <li>state_code, county</li>
+                    <li>chronic_conditions</li>
+                </ul>
+            </div>
+            <div class="semantic-card">
+                <h4>📈 Metrics</h4>
+                <ul class="semantic-list">
+                    <li>flagged_claim_count</li>
+                    <li>total_flagged_amount</li>
+                    <li>average_fraud_score</li>
+                    <li>investigation_rate</li>
+                    <li>confirmed_fraud_rate</li>
+                    <li>provider_risk_score</li>
+                    <li>recovery_potential</li>
+                </ul>
+            </div>
+            <div class="semantic-card">
+                <h4>📋 Facts</h4>
+                <ul class="semantic-list">
+                    <li>FLAGGED_CLAIMS</li>
+                    <li>INPATIENT_CLAIMS</li>
+                    <li>OUTPATIENT_CLAIMS</li>
+                    <li>CARRIER_CLAIMS</li>
+                    <li>BENEFICIARY_SUMMARY</li>
+                    <li>CASE_NOTES</li>
+                </ul>
+            </div>
+            <div class="semantic-card">
+                <h4>🔗 Reference</h4>
+                <ul class="semantic-list">
+                    <li>REF_ICD9_CODES</li>
+                    <li>REF_FRAUD_PATTERNS</li>
+                    <li>REF_STATE_CODES</li>
+                    <li>PROVIDER_RISK_PROFILE</li>
+                    <li>BENEFICIARY_RISK_PROFILE</li>
+                </ul>
+            </div>
+            <div class="semantic-card semantic-highlight">
+                <div class="semantic-highlight-icon">💡</div>
+                <div>
+                    <h4>Why Semantic Views Matter for Fraud Investigation</h4>
+                    <p>Without semantic context, AI might confuse "fraud_score" (ML model confidence) with "flagged_amount" (dollar value at risk). Semantic Views provide explicit definitions for fraud patterns like UPCODING, UNBUNDLING, and PHANTOM_BILLING—ensuring investigators get accurate, actionable insights every time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo">
+        <div class="section-header">
+            <div class="section-badge">Demo</div>
+            <h2 class="section-title">See It In Action</h2>
+            <p class="section-subtitle">Ask questions in plain English and get instant, accurate answers for fraud investigation with full transparency.</p>
+        </div>
+
+        <div class="demo-container">
+            <div class="demo-header">
+                <div class="demo-dot red"></div>
+                <div class="demo-dot yellow"></div>
+                <div class="demo-dot green"></div>
+                <span class="demo-title">🛡️ Fraud Investigation Assistant</span>
+            </div>
+            <div class="demo-content">
+                <div class="chat-message">
+                    <div class="chat-avatar user">👤</div>
+                    <div class="chat-bubble user">
+                        Show me the highest priority fraud cases I should investigate today, including the dollar amounts at risk.
+                    </div>
+                </div>
+                <div class="chat-message">
+                    <div class="chat-avatar bot">🤖</div>
+                    <div class="chat-bubble">
+                        <p>Based on risk scoring and flagged amounts, here are your top priority cases requiring immediate investigation:</p>
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Case ID</th>
+                                    <th>Pattern</th>
+                                    <th>Risk</th>
+                                    <th>Amount</th>
+                                    <th>Provider</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>FRD-2010-0847</td>
+                                    <td>PHANTOM_BILLING</td>
+                                    <td><span class="risk-badge critical">CRITICAL</span></td>
+                                    <td>$847,230</td>
+                                    <td>PRV-44821</td>
+                                </tr>
+                                <tr>
+                                    <td>FRD-2010-0623</td>
+                                    <td>UPCODING</td>
+                                    <td><span class="risk-badge critical">CRITICAL</span></td>
+                                    <td>$623,450</td>
+                                    <td>PRV-19283</td>
+                                </tr>
+                                <tr>
+                                    <td>FRD-2010-0412</td>
+                                    <td>UNBUNDLING</td>
+                                    <td><span class="risk-badge high">HIGH</span></td>
+                                    <td>$412,100</td>
+                                    <td>PRV-55102</td>
+                                </tr>
+                                <tr>
+                                    <td>FRD-2010-0398</td>
+                                    <td>DUPLICATE_BILLING</td>
+                                    <td><span class="risk-badge high">HIGH</span></td>
+                                    <td>$398,750</td>
+                                    <td>PRV-33847</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                            💡 <strong>Total at risk:</strong> $2.28M across 4 critical/high-priority cases
+                        </p>
+                    </div>
+                </div>
+
+                <div class="sample-questions">
+                    <div class="sample-question">
+                        <span>📊</span>
+                        "What fraud patterns are most common in Florida?"
+                    </div>
+                    <div class="sample-question">
+                        <span>⚠️</span>
+                        "Which providers have multiple flagged claims?"
+                    </div>
+                    <div class="sample-question">
+                        <span>📈</span>
+                        "Show upcoding trends over the past year"
+                    </div>
+                    <div class="sample-question">
+                        <span>👤</span>
+                        "Find beneficiaries with provider hopping patterns"
+                    </div>
+                    <div class="sample-question">
+                        <span>🔍</span>
+                        "What are the red flags for phantom billing?"
+                    </div>
+                    <div class="sample-question">
+                        <span>💰</span>
+                        "Total flagged amount by risk tier this quarter"
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section id="comparison">
+        <div class="section-header">
+            <div class="section-badge">Comparison</div>
+            <h2 class="section-title">Snowflake Intelligence vs. Databricks Genie</h2>
+            <p class="section-subtitle">A detailed comparison of enterprise AI-powered analytics capabilities for fraud investigation use cases.</p>
+        </div>
+
+        <div class="comparison-hero">
+            <h3 style="color: var(--text-muted); font-weight: 400; margin-bottom: 1rem;">Text-to-SQL Accuracy Benchmark</h3>
+            <div class="accuracy-comparison">
+                <div class="accuracy-item">
+                    <div class="accuracy-value snowflake">92%</div>
+                    <div class="accuracy-label">Cortex Analyst</div>
+                </div>
+                <div class="vs-badge">vs</div>
+                <div class="accuracy-item">
+                    <div class="accuracy-value competitor">73%</div>
+                    <div class="accuracy-label">Databricks Genie</div>
+                </div>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Cortex Analyst delivers significantly higher text-to-SQL accuracy, especially on complex fraud investigation queries.</p>
+        </div>
+
+        <div class="advantages-grid">
+            <div class="advantage-card">
+                <h3><span>⚡</span> Technical Superiority</h3>
+                <ul>
+                    <li><strong>92% accuracy</strong> vs. 73%—measurably better results</li>
+                    <li><strong>Works out-of-the-box</strong>—No Genie Space setup or YAML configs</li>
+                    <li><strong>Deep reasoning modes</strong>—Answers "why" and "how", not just "what"</li>
+                </ul>
+                <div class="advantage-tag">Performance</div>
+            </div>
+            <div class="advantage-card">
+                <h3><span>💬</span> User Experience</h3>
+                <ul>
+                    <li><strong>Unified agent</strong>—Single experience for structured + unstructured data</li>
+                    <li><strong>Multi-turn conversations</strong>—Real-time feedback & contextual follow-ups</li>
+                    <li><strong>Superior hybrid search</strong>—Vector + keyword with built-in reranking</li>
+                </ul>
+                <div class="advantage-tag">Usability</div>
+            </div>
+            <div class="advantage-card">
+                <h3><span>🚀</span> Time-to-Value</h3>
+                <ul>
+                    <li><strong>Zero management overhead</strong>—Single governance model throughout</li>
+                    <li><strong>Immediate productivity</strong>—AI insights from day one, no complex setup</li>
+                    <li><strong>Auto semantic layer</strong>—Builds views from actual data usage</li>
+                </ul>
+                <div class="advantage-tag">ROI</div>
+            </div>
+        </div>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Capability</th>
+                    <th>Snowflake</th>
+                    <th>Databricks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Text-to-SQL Accuracy</td>
+                    <td><strong class="check">92%</strong></td>
+                    <td>73%</td>
+                </tr>
+                <tr>
+                    <td>Out-of-Box Experience (No YAML/Config)</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="cross">✗</span></td>
+                </tr>
+                <tr>
+                    <td>Deep Reasoning ("Why" Questions)</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="partial">◐</span></td>
+                </tr>
+                <tr>
+                    <td>Unified Structured + Unstructured Agent</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="cross">✗</span></td>
+                </tr>
+                <tr>
+                    <td>Multi-Turn Conversations</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="partial">◐</span></td>
+                </tr>
+                <tr>
+                    <td>Hybrid Search with Reranking</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="cross">✗</span></td>
+                </tr>
+                <tr>
+                    <td>Auto Semantic Layer Creation</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="cross">✗</span></td>
+                </tr>
+                <tr>
+                    <td>Single Governance Model</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="partial">◐</span></td>
+                </tr>
+                <tr>
+                    <td>No Genie Space / Agent Management</td>
+                    <td><span class="check">✓</span></td>
+                    <td><span class="cross">✗</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 3rem; margin-bottom: 1.5rem;">Databricks Genie Limitations</h3>
+        <div class="limitations-grid">
+            <div class="limitation-card">
+                <h4><span>⚠️</span> Complex Setup Required</h4>
+                <p>Genie requires Genie Space configuration, YAML file management, and dashboard dependencies before users can ask questions. Multiple agent management becomes a governance challenge.</p>
+                <div class="limitation-tag">Friction</div>
+            </div>
+            <div class="limitation-card">
+                <h4><span>⚠️</span> Fragmented Experience</h4>
+                <p>Databricks separates structured queries (Genie) from unstructured (Agent Bricks/Mosaic AI). Users must context-switch between tools, and multi-turn follow-ups are limited.</p>
+                <div class="limitation-tag">UX Gap</div>
+            </div>
+            <div class="limitation-card">
+                <h4><span>⚠️</span> Manual Semantic Layer</h4>
+                <p>Genie requires manual YAML file management for semantic definitions. No auto-creation from actual data usage patterns, no intelligent SQL example recommendations.</p>
+                <div class="limitation-tag">Maintenance</div>
+            </div>
+        </div>
+
+        <div class="poc-box">
+            <h4><span>🎯</span> POC Recommendation</h4>
+            <p><strong>While Genie demos well with curated datasets</strong>, we strongly recommend testing both solutions on your actual fraud investigation data, edge cases, and real investigator questions—where Snowflake's accuracy advantages become most apparent.</p>
+            <p>The simplicity and out-of-the-box performance of Snowflake Intelligence, Cortex Analyst, and Cortex Search Service will shine through even in a brief proof-of-concept, delivering immediate value for fraud investigation workflows.</p>
+            <div class="poc-stats">
+                <div class="poc-stat">
+                    <div class="poc-stat-value">19%</div>
+                    <div class="poc-stat-label">Higher Accuracy</div>
+                </div>
+                <div class="poc-stat">
+                    <div class="poc-stat-value">0</div>
+                    <div class="poc-stat-label">YAML Files to Manage</div>
+                </div>
+                <div class="poc-stat">
+                    <div class="poc-stat-value">1</div>
+                    <div class="poc-stat-label">Unified Governance Model</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>HHS Fraud Investigation Demo | Powered by <a href="https://www.snowflake.com/en/data-cloud/cortex/" target="_blank">Snowflake Cortex</a></p>
+        <p style="margin-top: 0.5rem;">Data: CMS DE-SynPUF (2008-2010)</p>
+    </footer>
+</body>
+</html>

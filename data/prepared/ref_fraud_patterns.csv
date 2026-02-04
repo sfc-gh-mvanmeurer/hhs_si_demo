@@ -1,0 +1,7 @@
+PATTERN_CODE,PATTERN_NAME,DESCRIPTION,BASE_RISK_WEIGHT,KEY_INDICATORS
+UPCODING,Upcoding,Billing for more expensive services than actually provided,0.85,High-cost procedure codes|Pattern of maximum-level E&M codes|Procedure complexity inconsistent with diagnosis
+UNBUNDLING,Unbundling,Billing separately for services that should be bundled together,0.75,Multiple related procedure codes on same date|Component billing instead of comprehensive codes|Sequential modifier abuse
+PHANTOM_BILLING,Phantom Billing,Billing for services never rendered,0.95,Services billed after beneficiary death|Impossible service combinations|Geographic impossibility
+PROVIDER_HOPPING,Provider Hopping,Beneficiary visiting unusually high number of providers,0.7,Multiple providers same specialty same period|Excessive unique provider count|Pattern suggests doctor shopping
+DUPLICATE_BILLING,Duplicate Billing,Same service billed multiple times,0.8,Identical claims different dates|Same service multiple providers same day|Duplicate claim submissions
+MEDICALLY_UNLIKELY,Medically Unlikely,Services that are medically improbable given patient profile,0.65,Age-inappropriate procedures|Gender-specific services mismatch|Chronic condition inconsistency

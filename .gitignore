@@ -1,0 +1,22 @@
+# Large data files (exceed GitHub 100MB limit)
+# Download from CMS: https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files/cms-2008-2010-data-entrepreneurs-synthetic-public-use-file-de-synpuf
+
+# Original CMS files (too large)
+data/DE1_0_2008_to_2010_Carrier_Claims_Sample_1A.csv
+data/DE1_0_2008_to_2010_Carrier_Claims_Sample_1B.csv
+data/DE1_0_2008_to_2010_Prescription_Drug_Events_Sample_1.csv
+data/DE1_0_2008_to_2010_Outpatient_Claims_Sample_1.csv
+
+# Sampled files (generated locally, still exceed 100MB)
+data/sampled/
+
+# Python virtual environment
+.venv/
+
+# OS files
+.DS_Store
+*.png
+
+# IDE
+.idea/
+.vscode/

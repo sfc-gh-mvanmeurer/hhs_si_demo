@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Architecture | HHS Fraud Investigation Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0F172A;
+            --secondary: #1E293B;
+            --accent: #3B82F6;
+            --accent-light: #60A5FA;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --success: #10B981;
+            --purple: #8B5CF6;
+            --pink: #EC4899;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: #334155;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            
+            /* Schema colors */
+            --raw-color: #F59E0B;
+            --reference-color: #8B5CF6;
+            --analytics-color: #3B82F6;
+            --cortex-color: #10B981;
+            --agent-color: #EC4899;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Header */
+        header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--text);
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text) 0%, var(--accent-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Main content */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-dot.raw { background: var(--raw-color); }
+        .legend-dot.reference { background: var(--reference-color); }
+        .legend-dot.analytics { background: var(--analytics-color); }
+        .legend-dot.cortex { background: var(--cortex-color); }
+        .legend-dot.agent { background: var(--agent-color); }
+
+        /* Architecture Diagram */
+        .architecture {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .schema-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .schema-header {
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .schema-header.raw {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--raw-color);
+        }
+
+        .schema-header.reference {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: var(--reference-color);
+        }
+
+        .schema-header.analytics {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--analytics-color);
+        }
+
+        .schema-header.cortex {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--cortex-color);
+        }
+
+        .object-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .object-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .object-card.raw:hover { border-color: var(--raw-color); }
+        .object-card.reference:hover { border-color: var(--reference-color); }
+        .object-card.analytics:hover { border-color: var(--analytics-color); }
+        .object-card.cortex:hover { border-color: var(--cortex-color); }
+
+        .object-type {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+        }
+
+        .object-type.table { color: var(--raw-color); }
+        .object-type.view { color: var(--analytics-color); }
+        .object-type.semantic { color: var(--accent-light); }
+        .object-type.search { color: var(--cortex-color); }
+
+        .object-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .object-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .object-columns {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .column-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .column-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        /* Data Flow Section */
+        .flow-section {
+            margin: 4rem 0;
+        }
+
+        .flow-section h2 {
+            text-align: center;
+            font-size: 1.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .flow-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 2rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+
+        .flow-node {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 16px;
+            min-width: 150px;
+        }
+
+        .flow-node.source {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--raw-color);
+        }
+
+        .flow-node.transform {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid var(--analytics-color);
+        }
+
+        .flow-node.semantic {
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid var(--purple);
+        }
+
+        .flow-node.search {
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--cortex-color);
+        }
+
+        .flow-node.agent {
+            background: rgba(236, 72, 153, 0.1);
+            border: 2px solid var(--agent-color);
+        }
+
+        .flow-node-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-node-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .flow-node-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        /* Agent Section */
+        .agent-section {
+            margin: 4rem 0;
+        }
+
+        .agent-section h2 {
+            text-align: center;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .agent-section .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .agent-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .agent-card {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid var(--agent-color);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .agent-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .agent-tools {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .tool-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .tool-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .tool-icon.analyst { background: rgba(59, 130, 246, 0.2); }
+        .tool-icon.search { background: rgba(16, 185, 129, 0.2); }
+        .tool-icon.chart { background: rgba(245, 158, 11, 0.2); }
+
+        .tool-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .tool-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .tool-target {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-light);
+            margin-top: 0.5rem;
+        }
+
+        .semantic-views-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .semantic-view-card {
+            background: var(--card-bg);
+            border: 1px solid var(--purple);
+            border-radius: 16px;
+            padding: 1.25rem;
+        }
+
+        .semantic-view-card h4 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-light);
+            margin-bottom: 0.75rem;
+        }
+
+        .semantic-section {
+            margin-bottom: 1rem;
+        }
+
+        .semantic-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .semantic-section-title.dimensions { color: var(--purple); }
+        .semantic-section-title.facts { color: var(--raw-color); }
+        .semantic-section-title.metrics { color: var(--cortex-color); }
+
+        .semantic-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .semantic-item {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        /* ERD Section */
+        .erd-section {
+            margin: 4rem 0;
+        }
+
+        .erd-section h2 {
+            text-align: center;
+            font-size: 1.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .erd-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            overflow-x: auto;
+        }
+
+        .erd-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            min-width: 800px;
+        }
+
+        .erd-table {
+            background: var(--secondary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .erd-table-header {
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .erd-table-header.raw { background: rgba(245, 158, 11, 0.2); color: var(--raw-color); }
+        .erd-table-header.analytics { background: rgba(59, 130, 246, 0.2); color: var(--analytics-color); }
+        .erd-table-header.cortex { background: rgba(16, 185, 129, 0.2); color: var(--cortex-color); }
+        .erd-table-header.reference { background: rgba(139, 92, 246, 0.2); color: var(--reference-color); }
+
+        .erd-columns {
+            padding: 0.75rem 1rem;
+        }
+
+        .erd-column {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0;
+            font-size: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .erd-column:last-child {
+            border-bottom: none;
+        }
+
+        .erd-column-icon {
+            font-size: 0.7rem;
+        }
+
+        .erd-column-icon.pk { color: var(--raw-color); }
+        .erd-column-icon.fk { color: var(--accent-light); }
+
+        .erd-column-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+
+        .erd-column-type {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-light);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .architecture {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .agent-container {
+                grid-template-columns: 1fr;
+            }
+            .semantic-views-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .architecture {
+                grid-template-columns: 1fr;
+            }
+            .legend {
+                gap: 1rem;
+            }
+            .nav-links {
+                display: none;
+            }
+            .flow-diagram {
+                flex-direction: column;
+            }
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="grid-overlay"></div>
+
+    <header>
+        <a href="index.html" class="logo">
+            <div class="logo-icon">🛡️</div>
+            <span>HHS Fraud Investigation</span>
+        </a>
+        <nav class="nav-links">
+            <a href="index.html">Overview</a>
+            <a href="architecture.html" class="active">Architecture</a>
+        </nav>
+    </header>
+
+    <div class="hero">
+        <h1>Database Architecture</h1>
+        <p>Complete data flow from CMS source files through transformation layers to the Snowflake Intelligence Agent</p>
+    </div>
+
+    <main>
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot raw"></div>
+                <span>RAW Schema</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot reference"></div>
+                <span>REFERENCE Schema</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot analytics"></div>
+                <span>ANALYTICS Schema</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot cortex"></div>
+                <span>CORTEX Schema</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot agent"></div>
+                <span>Intelligence Agent</span>
+            </div>
+        </div>
+
+        <!-- Data Flow Diagram -->
+        <div class="flow-section">
+            <h2>Data Flow Pipeline</h2>
+            <div class="flow-diagram">
+                <div class="flow-node source">
+                    <div class="flow-node-icon">📁</div>
+                    <div class="flow-node-title">CMS Files</div>
+                    <div class="flow-node-sub">Internal Stage</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node source">
+                    <div class="flow-node-icon">🗄️</div>
+                    <div class="flow-node-title">RAW Tables</div>
+                    <div class="flow-node-sub">Source of Truth</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node transform">
+                    <div class="flow-node-icon">⚙️</div>
+                    <div class="flow-node-title">Analytics Views</div>
+                    <div class="flow-node-sub">Transformations</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node semantic">
+                    <div class="flow-node-icon">📐</div>
+                    <div class="flow-node-title">Semantic Views</div>
+                    <div class="flow-node-sub">Business Layer</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node agent">
+                    <div class="flow-node-icon">🤖</div>
+                    <div class="flow-node-title">SI Agent</div>
+                    <div class="flow-node-sub">Natural Language</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="architecture">
+            <!-- RAW Schema -->
+            <div class="schema-column">
+                <div class="schema-header raw">RAW Schema</div>
+                
+                <div class="object-card raw">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">BENEFICIARY_SUMMARY</div>
+                    <div class="object-desc">Medicare beneficiary demographics, coverage, chronic conditions (2008-2010)</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">DESYNPUF_ID</span>
+                            <span class="column-tag">BENE_BIRTH_DT</span>
+                            <span class="column-tag">SP_STATE_CODE</span>
+                            <span class="column-tag">SP_DIABETES</span>
+                            <span class="column-tag">MEDREIMB_IP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object-card raw">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">INPATIENT_CLAIMS</div>
+                    <div class="object-desc">Hospital inpatient claims with DRG codes, diagnoses, procedures</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">CLM_ID</span>
+                            <span class="column-tag">PRVDR_NUM</span>
+                            <span class="column-tag">CLM_PMT_AMT</span>
+                            <span class="column-tag">ICD9_DGNS_CD_1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object-card raw">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">OUTPATIENT_CLAIMS</div>
+                    <div class="object-desc">Outpatient facility claims</div>
+                </div>
+
+                <div class="object-card raw">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">CARRIER_CLAIMS</div>
+                    <div class="object-desc">Physician/supplier claims (sampled)</div>
+                </div>
+
+                <div class="object-card raw">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">FLAGGED_CLAIMS</div>
+                    <div class="object-desc">ML-flagged fraud cases with scores, patterns, risk tiers</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">CASE_ID</span>
+                            <span class="column-tag">FRAUD_SCORE</span>
+                            <span class="column-tag">RISK_TIER</span>
+                            <span class="column-tag">FRAUD_PATTERN</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object-card raw">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">CASE_NOTES</div>
+                    <div class="object-desc">Investigation notes from fraud analysts</div>
+                </div>
+            </div>
+
+            <!-- REFERENCE Schema -->
+            <div class="schema-column">
+                <div class="schema-header reference">REFERENCE Schema</div>
+                
+                <div class="object-card reference">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">REF_ICD9_CODES</div>
+                    <div class="object-desc">ICD-9 diagnosis code descriptions</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">ICD9_CODE</span>
+                            <span class="column-tag">DESCRIPTION</span>
+                            <span class="column-tag">CATEGORY</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object-card reference">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">REF_FRAUD_PATTERNS</div>
+                    <div class="object-desc">Fraud pattern definitions and detection rules</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">PATTERN_CODE</span>
+                            <span class="column-tag">DESCRIPTION</span>
+                            <span class="column-tag">INDICATORS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object-card reference">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">REF_STATE_CODES</div>
+                    <div class="object-desc">State code to name mappings</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">STATE_CODE</span>
+                            <span class="column-tag">STATE_NAME</span>
+                            <span class="column-tag">REGION</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYTICS Schema -->
+            <div class="schema-column">
+                <div class="schema-header analytics">ANALYTICS Schema</div>
+                
+                <div class="object-card analytics">
+                    <div class="object-type view">View</div>
+                    <div class="object-name">BENEFICIARY_ENRICHED</div>
+                    <div class="object-desc">Decoded demographics, chronic conditions, reimbursements</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">AGE</span>
+                            <span class="column-tag">GENDER</span>
+                            <span class="column-tag">STATE_NAME</span>
+                            <span class="column-tag">HAS_DIABETES</span>
+                            <span class="column-tag">TOTAL_REIMBURSEMENT</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object-card analytics">
+                    <div class="object-type view">View</div>
+                    <div class="object-name">FRAUD_INVESTIGATION</div>
+                    <div class="object-desc">Primary fraud case view joining claims, beneficiaries, diagnoses</div>
+                </div>
+
+                <div class="object-card analytics">
+                    <div class="object-type view">View</div>
+                    <div class="object-name">PROVIDER_RISK_PROFILE</div>
+                    <div class="object-desc">Provider-level aggregations with risk categories</div>
+                </div>
+
+                <div class="object-card analytics">
+                    <div class="object-type view">View</div>
+                    <div class="object-name">CLAIMS_UNIFIED</div>
+                    <div class="object-desc">Unified inpatient + outpatient claims</div>
+                </div>
+
+                <div class="object-card analytics" style="border-color: var(--purple);">
+                    <div class="object-type semantic">Semantic View</div>
+                    <div class="object-name">FRAUD_CASE_ANALYTICS</div>
+                    <div class="object-desc">Cortex Analyst semantic layer for fraud cases</div>
+                </div>
+
+                <div class="object-card analytics" style="border-color: var(--purple);">
+                    <div class="object-type semantic">Semantic View</div>
+                    <div class="object-name">BENEFICIARY_ANALYTICS</div>
+                    <div class="object-desc">Cortex Analyst semantic layer for beneficiaries</div>
+                </div>
+
+                <div class="object-card analytics" style="border-color: var(--purple);">
+                    <div class="object-type semantic">Semantic View</div>
+                    <div class="object-name">PROVIDER_RISK_ANALYTICS</div>
+                    <div class="object-desc">Cortex Analyst semantic layer for providers</div>
+                </div>
+            </div>
+
+            <!-- CORTEX Schema -->
+            <div class="schema-column">
+                <div class="schema-header cortex">CORTEX Schema</div>
+                
+                <div class="object-card cortex">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">CASE_NOTES_SEARCH</div>
+                    <div class="object-desc">Materialized case notes with SEARCH_CONTENT for indexing</div>
+                </div>
+
+                <div class="object-card cortex">
+                    <div class="object-type table">Table</div>
+                    <div class="object-name">FRAUD_KNOWLEDGE_BASE</div>
+                    <div class="object-desc">Investigation guidelines and procedures</div>
+                </div>
+
+                <div class="object-card cortex" style="border-color: var(--cortex-color);">
+                    <div class="object-type search">Search Service</div>
+                    <div class="object-name">FRAUD_CASE_SEARCH</div>
+                    <div class="object-desc">Hybrid search over investigation case notes</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">Vector + Keyword</span>
+                            <span class="column-tag">1hr refresh</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object-card cortex" style="border-color: var(--cortex-color);">
+                    <div class="object-type search">Search Service</div>
+                    <div class="object-name">FRAUD_KNOWLEDGE_SEARCH</div>
+                    <div class="object-desc">Search fraud detection guidelines and policies</div>
+                    <div class="object-columns">
+                        <div class="column-list">
+                            <span class="column-tag">Vector + Keyword</span>
+                            <span class="column-tag">1day refresh</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Section -->
+        <div class="agent-section">
+            <h2>Snowflake Intelligence Agent</h2>
+            <p class="subtitle">FRAUD_INVESTIGATION_AGENT orchestrates 5 tools across semantic views and search services</p>
+
+            <div class="agent-container">
+                <div class="agent-card">
+                    <h3><span>🤖</span> Fraud Investigation Assistant</h3>
+                    <p>AI-powered agent that understands natural language questions about fraud cases, beneficiaries, providers, and investigation procedures.</p>
+                    
+                    <div class="agent-tools">
+                        <div class="tool-item">
+                            <div class="tool-icon analyst">📊</div>
+                            <div class="tool-info">
+                                <h4>FraudCaseAnalyst</h4>
+                                <p>Text-to-SQL for fraud cases, patterns, risk tiers, claim amounts</p>
+                                <div class="tool-target">→ FRAUD_CASE_ANALYTICS</div>
+                            </div>
+                        </div>
+                        <div class="tool-item">
+                            <div class="tool-icon analyst">👤</div>
+                            <div class="tool-info">
+                                <h4>BeneficiaryAnalyst</h4>
+                                <p>Text-to-SQL for demographics, health conditions, reimbursements</p>
+                                <div class="tool-target">→ BENEFICIARY_ANALYTICS</div>
+                            </div>
+                        </div>
+                        <div class="tool-item">
+                            <div class="tool-icon analyst">🏥</div>
+                            <div class="tool-info">
+                                <h4>ProviderAnalyst</h4>
+                                <p>Text-to-SQL for provider risk profiles and patterns</p>
+                                <div class="tool-target">→ PROVIDER_RISK_ANALYTICS</div>
+                            </div>
+                        </div>
+                        <div class="tool-item">
+                            <div class="tool-icon search">🔍</div>
+                            <div class="tool-info">
+                                <h4>CaseNotesSearch</h4>
+                                <p>Semantic search over investigation notes and history</p>
+                                <div class="tool-target">→ FRAUD_CASE_SEARCH</div>
+                            </div>
+                        </div>
+                        <div class="tool-item">
+                            <div class="tool-icon search">📚</div>
+                            <div class="tool-info">
+                                <h4>KnowledgeSearch</h4>
+                                <p>Search fraud investigation guidelines and procedures</p>
+                                <div class="tool-target">→ FRAUD_KNOWLEDGE_SEARCH</div>
+                            </div>
+                        </div>
+                        <div class="tool-item">
+                            <div class="tool-icon chart">📈</div>
+                            <div class="tool-info">
+                                <h4>data_to_chart</h4>
+                                <p>Generate visualizations from query results</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="semantic-views-grid">
+                    <div class="semantic-view-card">
+                        <h4>FRAUD_CASE_ANALYTICS</h4>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title dimensions">Dimensions</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">CASE_ID</span>
+                                <span class="semantic-item">CLAIM_ID</span>
+                                <span class="semantic-item">FRAUD_PATTERN</span>
+                                <span class="semantic-item">RISK_TIER</span>
+                                <span class="semantic-item">REVIEW_STATUS</span>
+                                <span class="semantic-item">PROVIDER_ID</span>
+                                <span class="semantic-item">BENEFICIARY_STATE</span>
+                            </div>
+                        </div>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title facts">Facts</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">CLAIM_AMOUNT</span>
+                                <span class="semantic-item">FRAUD_SCORE</span>
+                                <span class="semantic-item">DAYS_SINCE_FLAGGED</span>
+                            </div>
+                        </div>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title metrics">Metrics</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">total_cases</span>
+                                <span class="semantic-item">total_amount_at_risk</span>
+                                <span class="semantic-item">critical_cases</span>
+                                <span class="semantic-item">unique_providers</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="semantic-view-card">
+                        <h4>BENEFICIARY_ANALYTICS</h4>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title dimensions">Dimensions</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">BENEFICIARY_ID</span>
+                                <span class="semantic-item">GENDER</span>
+                                <span class="semantic-item">RACE</span>
+                                <span class="semantic-item">STATE_NAME</span>
+                                <span class="semantic-item">HAS_DIABETES</span>
+                                <span class="semantic-item">HAS_CHF</span>
+                                <span class="semantic-item">IS_DECEASED</span>
+                            </div>
+                        </div>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title facts">Facts</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">AGE</span>
+                                <span class="semantic-item">CHRONIC_COUNT</span>
+                                <span class="semantic-item">INPATIENT_REIMB</span>
+                                <span class="semantic-item">OUTPATIENT_REIMB</span>
+                            </div>
+                        </div>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title metrics">Metrics</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">total_beneficiaries</span>
+                                <span class="semantic-item">average_age</span>
+                                <span class="semantic-item">diabetic_count</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="semantic-view-card">
+                        <h4>PROVIDER_RISK_ANALYTICS</h4>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title dimensions">Dimensions</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">PROVIDER_ID</span>
+                                <span class="semantic-item">RISK_CATEGORY</span>
+                                <span class="semantic-item">PRIMARY_PATTERN</span>
+                                <span class="semantic-item">FLAGGED_COUNT</span>
+                                <span class="semantic-item">TOTAL_AMOUNT</span>
+                                <span class="semantic-item">AVG_SCORE</span>
+                            </div>
+                        </div>
+                        <div class="semantic-section">
+                            <div class="semantic-section-title metrics">Metrics</div>
+                            <div class="semantic-items">
+                                <span class="semantic-item">total_providers</span>
+                                <span class="semantic-item">high_risk_count</span>
+                                <span class="semantic-item">very_high_risk_count</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ERD Section -->
+        <div class="erd-section">
+            <h2>Entity Relationships</h2>
+            <div class="erd-container">
+                <div class="erd-grid">
+                    <div class="erd-table">
+                        <div class="erd-table-header raw">
+                            <span>📋</span> FLAGGED_CLAIMS
+                        </div>
+                        <div class="erd-columns">
+                            <div class="erd-column">
+                                <span class="erd-column-icon pk">🔑</span>
+                                <span class="erd-column-name">CASE_ID</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon fk">🔗</span>
+                                <span class="erd-column-name">CLM_ID</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon fk">🔗</span>
+                                <span class="erd-column-name">DESYNPUF_ID</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon fk">🔗</span>
+                                <span class="erd-column-name">PRVDR_NUM</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">FRAUD_SCORE</span>
+                                <span class="erd-column-type">FLOAT</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">RISK_TIER</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="erd-table">
+                        <div class="erd-table-header raw">
+                            <span>👤</span> BENEFICIARY_SUMMARY
+                        </div>
+                        <div class="erd-columns">
+                            <div class="erd-column">
+                                <span class="erd-column-icon pk">🔑</span>
+                                <span class="erd-column-name">DESYNPUF_ID</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon fk">🔗</span>
+                                <span class="erd-column-name">SP_STATE_CODE</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">BENE_BIRTH_DT</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">BENE_SEX_IDENT_CD</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">SP_DIABETES</span>
+                                <span class="erd-column-type">INT</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="erd-table">
+                        <div class="erd-table-header raw">
+                            <span>🏥</span> INPATIENT_CLAIMS
+                        </div>
+                        <div class="erd-columns">
+                            <div class="erd-column">
+                                <span class="erd-column-icon pk">🔑</span>
+                                <span class="erd-column-name">CLM_ID</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon fk">🔗</span>
+                                <span class="erd-column-name">DESYNPUF_ID</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">PRVDR_NUM</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">CLM_PMT_AMT</span>
+                                <span class="erd-column-type">FLOAT</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon fk">🔗</span>
+                                <span class="erd-column-name">ICD9_DGNS_CD_1</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="erd-table">
+                        <div class="erd-table-header reference">
+                            <span>📖</span> REF_ICD9_CODES
+                        </div>
+                        <div class="erd-columns">
+                            <div class="erd-column">
+                                <span class="erd-column-icon pk">🔑</span>
+                                <span class="erd-column-name">ICD9_CODE</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">DESCRIPTION</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                            <div class="erd-column">
+                                <span class="erd-column-icon"></span>
+                                <span class="erd-column-name">CATEGORY</span>
+                                <span class="erd-column-type">VARCHAR</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>HHS Fraud Investigation Demo</p>
+        <p style="margin-top: 0.5rem;">Database: HHS_SI_DEMO | Schemas: RAW, REFERENCE, ANALYTICS, CORTEX</p>
+    </footer>
+</body>
+</html>

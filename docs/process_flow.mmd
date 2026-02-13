@@ -1,17 +1,3 @@
-# HHS Fraud Investigation Demo
-
-Snowflake Intelligence demo for Medicare/Medicaid fraud investigation using Cortex Analyst and Cortex Search.
-
-## Overview
-
-ML-flagged claims are triaged and investigated through a conversational AI interface that combines:
-- **Cortex Analyst** - Natural language queries over structured data
-- **Cortex Search** - Search over investigation notes and guidelines
-- **Snowflake Intelligence** - Unified "Fraud Investigation Assistant" agent
-
-## Process Flow
-
-```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#29B5E8', 'primaryTextColor': '#fff', 'primaryBorderColor': '#29B5E8', 'lineColor': '#4a4a4a', 'secondaryColor': '#F4F4F4', 'tertiaryColor': '#fff'}}}%%
 
 flowchart LR
@@ -76,9 +62,12 @@ flowchart LR
         DECISION["Investigation<br>Decisions"]
     end
 
+    %% Data to Python
     BENE --> LOAD
     INPT --> LOAD
     OUTPT --> LOAD
+    
+    %% Python pipeline
     LOAD --> SAMPLE
     SAMPLE --> ASSIGN
     ASSIGN --> P1
@@ -89,6 +78,8 @@ flowchart LR
     NOTES --> CN
     ASSIGN --> REFS
     REFS --> REF
+    
+    %% Files to Snowflake
     FC --> RAW
     CN --> RAW
     REF --> RAW
@@ -97,6 +88,8 @@ flowchart LR
     OUTPT --> RAW
     RX --> RAW
     CARRIER --> RAW
+    
+    %% Snowflake pipeline
     RAW --> ENRICH
     RAW --> UNIFIED
     ENRICH --> PROFILES
@@ -110,6 +103,7 @@ flowchart LR
     AGENT --> INV
     INV --> DECISION
 
+    %% Styling for contrast
     style DATA fill:#E8F4FD,stroke:#1E88E5,stroke-width:2px,color:#1565C0
     style PYTHON fill:#FFF3E0,stroke:#F57C00,stroke-width:2px,color:#E65100
     style PATTERNS fill:#FCE4EC,stroke:#D81B60,stroke-width:2px,color:#AD1457
@@ -120,56 +114,6 @@ flowchart LR
     style CORTEX fill:#64B5F6,stroke:#1565C0,stroke-width:1px,color:#0D47A1
     style INTEL fill:#29B5E8,stroke:#0D47A1,stroke-width:2px,color:#fff
     style USER fill:#FFECB3,stroke:#FFA000,stroke-width:2px,color:#FF6F00
+    
+    %% Agent node styling
     style AGENT fill:#E3F2FD,stroke:#0D47A1,stroke-width:3px,color:#0D47A1
-```
-
-## Quick Start
-
-### 1. Prepare Data
-
-```bash
-python scripts/prepare_fraud_data.py      # Generate fraud simulation data
-python scripts/sample_large_files.py      # Sample large files (<250MB)
-```
-
-### 2. Execute SQL (in order)
-
-```sql
-@sql/00_setup_environment.sql         -- Database, schemas, warehouse
-@sql/01_create_stage_load_data.sql    -- Stage and load data
-@sql/02_data_engineering.sql          -- Analytics views
-@sql/03_semantic_model.sql            -- Cortex Analyst model
-@sql/04_cortex_search.sql             -- Search services
-@sql/05_snowflake_intelligence.sql    -- SI agent
-```
-
-### 3. Upload Files
-
-Upload to `@HHS_DATA_STAGE/cms/`:
-- Beneficiary files (3), Inpatient, Outpatient from `data/`
-- Sampled Carrier/Prescription files from `data/sampled/`
-
-Upload to `@HHS_DATA_STAGE/prepared/`:
-- Fraud simulation files from `data/prepared/`
-
-## Project Structure
-
-```
-hhs_si_demo/
-├── data/              # CMS DE-SynPUF data + sampled/prepared subfolders
-├── scripts/           # Data preparation scripts
-├── sql/               # SQL setup scripts (00-05)
-└── docs/              # Architecture documentation
-```
-
-## Sample Questions
-
-```
-"Show me all critical risk cases that need immediate review"
-"Tell me everything about case CASE-2010-00015"
-"Which providers have the most flagged claims?"
-```
-
-## Data Source
-
-CMS DE-SynPUF (Synthetic Public Use Files) - 100% synthetic, no real patient data.
